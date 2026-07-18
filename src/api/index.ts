@@ -1,2 +1,4 @@
-export { login, register, forgotPassword, resetPassword, verifyEmail, resendVerification } from './auth';
 export { axiosAuth, axiosUser } from './api';
+export { forgotPassword, login, register, resendVerification, resetPassword, verifyEmail } from './auth';
+export * from './user';
+
