@@ -1,10 +1,10 @@
+import { ReportModal } from '@/components/Reports/ReportModal';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatView } from '../../components/messages/ChatView';
 import { ConversationItem } from '../../components/messages/ConversationItem';
-import { ReportModal } from '../../components/reports/ReportModal';
 import { WD } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMessagesStore } from '../../store/userStore';
