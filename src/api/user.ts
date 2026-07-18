@@ -25,6 +25,12 @@ export const sendMessage = async ({
 export const getUserNotifications = async (userId: string) =>
   await axiosUser.get(`/notifications/${userId}`);
 
+export const markNotificationAsRead = async (id: string) =>
+  await axiosUser.patch(`/notifications/${id}/read`);
+
+export const markAllNotificationsAsRead = async (userId: string) =>
+  await axiosUser.patch(`/notifications/${userId}/read-all`);
+
 // ================= REVIEWS =================
 export const createReview = async (data: any) => await axiosUser.post('/reviews', data);
 

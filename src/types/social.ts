@@ -29,6 +29,7 @@ export interface AppNotification {
   Type: NotificationType;
   Message: string;
   createdAt: string;
+  isRead: boolean;
 }
 
 export interface Review {

@@ -1,7 +1,5 @@
 // src/store/userStore.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
 import * as api from '../api/user';
 import type { AppNotification, Conversation, Message, Report, Review } from '../types/social';
 
@@ -95,51 +93,51 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 // ================= NOTIFICATIONS STORE =================
 interface NotificationsState {
   notifications: AppNotification[];
-  readIds: string[];
   loading: boolean;
   error: string | null;
   getNotifications: (userId: string) => Promise<void>;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: (userId: string) => Promise<void>;
   clearError: () => void;
 }
 
-export const useNotificationsStore = create<NotificationsState>()(
-  persist(
-    (set, get) => ({
-      notifications: [],
-      readIds: [],
-      loading: false,
-      error: null,
+export const useNotificationsStore = create<NotificationsState>((set, get) => ({
+  notifications: [],
+  loading: false,
+  error: null,
 
-      getNotifications: async (userId) => {
-        try {
-          set({ loading: true, error: null });
-          const res = await api.getUserNotifications(userId);
-          set({ notifications: res.data?.notifications || [], loading: false });
-        } catch (error: any) {
-          set({ error: error.response?.data?.message || 'Error al obtener notificaciones', loading: false });
-        }
-      },
-
-      markAsRead: (id) => {
-        if (get().readIds.includes(id)) return;
-        set({ readIds: [...get().readIds, id] });
-      },
-
-      markAllAsRead: () => {
-        const allIds = get().notifications.map((n) => n._id);
-        set({ readIds: Array.from(new Set([...get().readIds, ...allIds])) });
-      },
-
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'notifications-read-store',
-      storage: createJSONStorage(() => AsyncStorage),
+  getNotifications: async (userId) => {
+    try {
+      set({ loading: true, error: null });
+      const res = await api.getUserNotifications(userId);
+      set({ notifications: res.data?.notifications || [], loading: false });
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Error al obtener notificaciones', loading: false });
     }
-  )
-);
+  },
+
+  markAsRead: async (id) => {
+    const previous = get().notifications;
+    set({ notifications: previous.map((n) => (n._id === id ? { ...n, isRead: true } : n)) });
+    try {
+      await api.markNotificationAsRead(id);
+    } catch (error: any) {
+      set({ notifications: previous, error: error.response?.data?.message || 'Error al marcar como leída' });
+    }
+  },
+
+  markAllAsRead: async (userId) => {
+    const previous = get().notifications;
+    set({ notifications: previous.map((n) => ({ ...n, isRead: true })) });
+    try {
+      await api.markAllNotificationsAsRead(userId);
+    } catch (error: any) {
+      set({ notifications: previous, error: error.response?.data?.message || 'Error al marcar todas como leídas' });
+    }
+  },
+
+  clearError: () => set({ error: null }),
+}));
 
 // ================= REVIEWS STORE =================
 interface ReviewsState {

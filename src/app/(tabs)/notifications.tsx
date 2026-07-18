@@ -13,14 +13,13 @@ export default function NotificationsScreen() {
   const { user } = useAuthStore();
   const currentUserId = (user?._id || user?.id) as string;
 
-  const { notifications, readIds, loading, getNotifications, markAsRead, markAllAsRead } = useNotificationsStore();
+  const { notifications, loading, getNotifications, markAsRead, markAllAsRead } = useNotificationsStore();
 
   useEffect(() => {
     if (currentUserId) getNotifications(currentUserId);
   }, [currentUserId]);
 
-  const unreadCount = notifications.filter((n) => !readIds.includes(n._id)).length;
-
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -29,7 +28,7 @@ export default function NotificationsScreen() {
           <Text style={styles.subtitle}>{unreadCount > 0 ? `Tienes ${unreadCount} sin leer` : 'Estás al día'}</Text>
         </View>
         {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onPress={markAllAsRead}>
+          <Button variant="outline" size="sm" onPress={() => markAllAsRead(currentUserId)}>
             Marcar todas
           </Button>
         )}
@@ -46,7 +45,11 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
-          <NotificationItem notification={item} read={readIds.includes(item._id)} onRead={markAsRead} />
+          <NotificationItem
+            notification={item}
+            read={item.isRead}
+            onRead={markAsRead}
+          />
         )}
       />
     </View>
