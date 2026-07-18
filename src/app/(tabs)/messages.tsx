@@ -1,4 +1,3 @@
-// src/app/(tabs)/messages.tsx
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
