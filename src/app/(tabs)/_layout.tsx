@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, useIsClient } from '../../store/authStore';
-import { WD } from '../../constants/theme';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { DashboardHeader } from '../../components/layout/DashboardHeader';
+import { WD } from '../../constants/theme';
+import { useAuthStore, useIsClient } from '../../store/authStore';
 
 export default function TabsLayout() {
   const { logout } = useAuthStore();
@@ -81,6 +81,17 @@ export default function TabsLayout() {
         <Tabs.Screen name="messages" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
+
+        <Tabs.Screen
+  name="profile"
+  options={{
+    title: 'Perfil',
+    tabBarLabel: 'Perfil',
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="person-outline" size={size} color={color} />
+    ),
+  }}
+/>
       </Tabs>
     </View>
   );
