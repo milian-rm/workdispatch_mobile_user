@@ -1,9 +1,9 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { WD } from '../../constants/theme';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
+import { WD } from '../../../constants/theme';
+import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
 
 type AnyRecord = Record<string, any>;
 

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { WD } from '../../constants/theme';
-import { getWorkerProposals } from '../../api/workerDashboard';
-import { useAuthStore } from '../../store/authStore';
-import type { User } from '../../types/auth';
-import { WorkerRequestDetailsModal } from './WorkerRequestDetailsModal';
+import { WD } from '../../../constants/theme';
+import { getWorkerProposals } from '../../../api/workerDashboard';
+import { useAuthStore } from '../../../store/authStore';
+import type { User } from '../../../types/auth';
+import { WorkerRequestDetailsModal } from '../../dashboard/Worker/WorkerRequestDetailsModal';
 
 type AnyRecord = Record<string, any>;
 

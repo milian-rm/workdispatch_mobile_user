@@ -29,3 +29,17 @@ export const createProposal = async (payload: {
 export const getWorkerServices = async (workerId: string) => {
   return axiosUser.get(`/Service/worker/${workerId}`);
 };
+
+export const getReviewsByReviewer = async (reviewerId: string) => {
+  return axiosUser.get(`/reviews/client/${reviewerId}`);
+};
+
+export const createReview = async (payload: {
+  serviceId: string;
+  reviewerId: string;
+  revieweredId: string;
+  Rating: number;
+  Comment: string;
+}) => {
+  return axiosUser.post('/reviews', payload);
+};

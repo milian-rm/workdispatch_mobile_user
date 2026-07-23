@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { WD } from '../../constants/theme';
-import { createProposal } from '../../api/workerDashboard';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
+import { WD } from '../../../constants/theme';
+import { createProposal } from '../../../api/workerDashboard';
+import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
 
 type AnyRecord = Record<string, any>;
 

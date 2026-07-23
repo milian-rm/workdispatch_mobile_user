@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, TextInput, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { WD } from '../../constants/theme';
-import { Badge, Card, CardContent } from '../ui/Card';
-import { DashboardStats, type StatItem } from './DashboardStats';
+import { WD } from '../../../constants/theme';
+import { Badge, Card, CardContent } from '../../ui/Card';
+import { DashboardStats, type StatItem } from '../DashboardStats';
 import { WorkerOfferModal } from './WorkerOfferModal';
 import { WorkerRequestDetailsModal } from './WorkerRequestDetailsModal';
 import {
@@ -13,8 +13,8 @@ import {
   getWorkerProposals,
   getWorkerServices,
   getWorkerSkills,
-} from '../../api/workerDashboard';
-import type { User } from '../../types/auth';
+} from '../../../api/workerDashboard';
+import type { User } from '../../../types/auth';
 
 type AnyRecord = Record<string, any>;
 
