@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, ActivityIndicator, TextInput, Pressable } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, ActivityIndicator, TextInput, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import { WD } from '../../constants/theme';
 import { Badge, Card, CardContent } from '../ui/Card';
 import { DashboardStats, type StatItem } from './DashboardStats';
+import { WorkerOfferModal } from './WorkerOfferModal';
+import { WorkerRequestDetailsModal } from './WorkerRequestDetailsModal';
 import {
   getCategories,
   getOpenServiceRequests,
@@ -34,6 +37,11 @@ const getId = (value: any) => {
 };
 
 const getUserId = (user: User | null) => String(user?.id || user?._id || user?.userId || user?.Id || '');
+const JOBS_PER_PAGE = 5;
+
+const getImageUrl = (job: AnyRecord) => {
+  return job?.serviceImage?.url || job?.image?.url || job?.photo?.url || '';
+};
 
 const getCategoryName = (request: AnyRecord) => {
   const category = request?.categoryId || request?.category;
@@ -123,9 +131,12 @@ export function WorkerDashboardSummary({ user }: { user: User | null }) {
   const [categories, setCategories] = useState<AnyRecord[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [jobSearch, setJobSearch] = useState('');
+  const [jobsPage, setJobsPage] = useState(1);
   const [skills, setSkills] = useState<AnyRecord[]>([]);
   const [proposals, setProposals] = useState<AnyRecord[]>([]);
   const [services, setServices] = useState<AnyRecord[]>([]);
+  const [selectedOfferJob, setSelectedOfferJob] = useState<AnyRecord | null>(null);
+  const [selectedDetailsJob, setSelectedDetailsJob] = useState<AnyRecord | null>(null);
 
   useEffect(() => {
     if (!workerId) return;
@@ -187,8 +198,52 @@ export function WorkerDashboardSummary({ user }: { user: User | null }) {
     });
   }, [jobSearch, openJobs, selectedCategoryId]);
 
+  useEffect(() => {
+    setJobsPage(1);
+  }, [jobSearch, selectedCategoryId]);
+
+  const totalJobPages = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
+  const paginatedJobs = useMemo(() => {
+    const safePage = Math.min(jobsPage, totalJobPages);
+    const start = (safePage - 1) * JOBS_PER_PAGE;
+    return filteredJobs.slice(start, start + JOBS_PER_PAGE);
+  }, [filteredJobs, jobsPage, totalJobPages]);
+
+  useEffect(() => {
+    if (jobsPage > totalJobPages) setJobsPage(totalJobPages);
+  }, [jobsPage, totalJobPages]);
+
   const pendingProposals = proposals.filter((proposal) => proposal?.status === 'PENDING');
   const activeServices = services.filter((service) => service?.status === 'IN_PROGRESS');
+  const proposedRequestIds = useMemo(() => {
+    return new Set(
+      proposals
+        .map((proposal) => getId(proposal?.serviceRequestId))
+        .filter(Boolean)
+    );
+  }, [proposals]);
+
+  const handleOpenOfferModal = (job: AnyRecord) => {
+    if (proposedRequestIds.has(getId(job))) {
+      Toast.show({ type: 'error', text1: 'Ya enviaste una oferta para esta solicitud.' });
+      return;
+    }
+
+    setSelectedOfferJob(job);
+  };
+
+  const handleOfferFromDetails = () => {
+    const job = selectedDetailsJob;
+    if (!job) return;
+
+    setSelectedDetailsJob(null);
+    handleOpenOfferModal(job);
+  };
+
+  const handleProposalCreated = (proposal: AnyRecord) => {
+    if (!proposal) return;
+    setProposals((current) => [proposal, ...current]);
+  };
 
   const stats: StatItem[] = [
     { label: 'Trabajos Disponibles', value: filteredJobs.length, icon: 'briefcase-outline', bg: '#FEF9C3', border: '#FDE68A', color: '#CA8A04' },
@@ -271,33 +326,68 @@ export function WorkerDashboardSummary({ user }: { user: User | null }) {
             </View>
           ) : filteredJobs.length ? (
             <View style={styles.list}>
-              {filteredJobs.slice(0, 5).map((job) => {
+              {paginatedJobs.map((job) => {
                 const matchesWorkerProfile = skillCategoryIds.has(getId(job?.categoryId || job?.category));
+                const alreadyOffered = proposedRequestIds.has(getId(job));
+                const imageUrl = getImageUrl(job);
 
                 return (
                   <View key={job._id || job.id} style={styles.jobCard}>
-                    <View style={styles.badgeRow}>
-                      <Badge>{getCategoryName(job)}</Badge>
-                      {matchesWorkerProfile && <Badge variant="outline">Coincide con tu perfil</Badge>}
+                    <View style={styles.jobSummaryRow}>
+                      <View style={styles.jobThumb}>
+                        {imageUrl ? (
+                          <Image source={{ uri: imageUrl }} style={styles.jobThumbImage} resizeMode="cover" />
+                        ) : (
+                          <Ionicons name="image-outline" size={28} color="#9CA3AF" />
+                        )}
+                      </View>
+
+                      <View style={styles.jobSummaryText}>
+                        <View style={styles.badgeRow}>
+                          <Badge>{getCategoryName(job)}</Badge>
+                          {matchesWorkerProfile && <Badge variant="outline">Coincide con tu perfil</Badge>}
+                        </View>
+                        <Text style={styles.jobTitle} numberOfLines={1}>{job.title || 'Trabajo disponible'}</Text>
+                        <Text style={styles.jobBudget}>{formatBudget(job)}</Text>
+                        <Text style={styles.jobDate}>{formatDate(job.createdAt)}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.jobTitle} numberOfLines={1}>{job.title || 'Trabajo disponible'}</Text>
-                    <Text style={styles.jobDesc} numberOfLines={2}>
-                      {job.description || 'El cliente aun no agrego una descripcion detallada.'}
-                    </Text>
-                    <View style={styles.jobMeta}>
-                      <Text style={styles.jobBudget}>{formatBudget(job)}</Text>
-                      <Text style={styles.jobDate}>{formatDate(job.createdAt)}</Text>
-                    </View>
-                    <View style={styles.locationRow}>
-                      <Ionicons name="location-outline" size={14} color="#9CA3AF" />
-                      <Text style={styles.locationText} numberOfLines={1}>{job.address || 'Ubicacion por confirmar'}</Text>
-                    </View>
-                    <Pressable style={styles.offerButton}>
-                      <Text style={styles.offerButtonText}>Enviar oferta</Text>
+
+                    <Pressable
+                      onPress={() => setSelectedDetailsJob(job)}
+                      style={styles.offerButton}
+                    >
+                      <Text style={styles.offerButtonText}>Ver detalles</Text>
                     </Pressable>
+                    {alreadyOffered ? (
+                      <View style={styles.sentOfferPill}>
+                        <Text style={styles.sentOfferText}>Ya ofertaste</Text>
+                      </View>
+                    ) : null}
                   </View>
                 );
               })}
+              {totalJobPages > 1 ? (
+                <View style={styles.pagination}>
+                  <Text style={styles.paginationText}>Pagina {jobsPage} de {totalJobPages}</Text>
+                  <View style={styles.paginationActions}>
+                    <Pressable
+                      disabled={jobsPage === 1}
+                      onPress={() => setJobsPage((page) => Math.max(1, page - 1))}
+                      style={[styles.paginationButton, jobsPage === 1 && styles.paginationButtonDisabled]}
+                    >
+                      <Text style={styles.paginationButtonText}>Anterior</Text>
+                    </Pressable>
+                    <Pressable
+                      disabled={jobsPage === totalJobPages}
+                      onPress={() => setJobsPage((page) => Math.min(totalJobPages, page + 1))}
+                      style={[styles.paginationButton, jobsPage === totalJobPages && styles.paginationButtonDisabled]}
+                    >
+                      <Text style={styles.paginationButtonText}>Siguiente</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
             </View>
           ) : (
             <View style={styles.emptyState}>
@@ -366,6 +456,22 @@ export function WorkerDashboardSummary({ user }: { user: User | null }) {
           )}
         </CardContent>
       </Card>
+
+      <WorkerOfferModal
+        open={!!selectedOfferJob}
+        onClose={() => setSelectedOfferJob(null)}
+        job={selectedOfferJob}
+        workerId={workerId}
+        hasExistingProposal={selectedOfferJob ? proposedRequestIds.has(getId(selectedOfferJob)) : false}
+        onCreated={handleProposalCreated}
+      />
+      <WorkerRequestDetailsModal
+        open={!!selectedDetailsJob}
+        onClose={() => setSelectedDetailsJob(null)}
+        job={selectedDetailsJob}
+        alreadyOffered={selectedDetailsJob ? proposedRequestIds.has(getId(selectedDetailsJob)) : false}
+        onOffer={handleOfferFromDetails}
+      />
     </ScrollView>
   );
 }
@@ -492,6 +598,27 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#FFFFFF',
   },
+  jobSummaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  jobThumb: {
+    width: 76,
+    height: 76,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  jobThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  jobSummaryText: {
+    flex: 1,
+    minWidth: 0,
+  },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -503,36 +630,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111827',
   },
-  jobDesc: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  jobMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 10,
-  },
   jobBudget: {
     color: '#111827',
     fontSize: 13,
     fontWeight: '900',
+    marginTop: 4,
   },
   jobDate: {
     color: '#6B7280',
     fontSize: 12,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 10,
-  },
-  locationText: {
-    flex: 1,
-    color: '#6B7280',
-    fontSize: 12,
+    marginTop: 2,
   },
   offerButton: {
     minHeight: 40,
@@ -542,9 +649,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 12,
   },
+  offerButtonDisabled: {
+    opacity: 0.55,
+  },
   offerButtonText: {
     color: '#111827',
     fontSize: 13,
+    fontWeight: '800',
+  },
+  sentOfferPill: {
+    minHeight: 34,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 10,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  sentOfferText: {
+    color: '#15803D',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  pagination: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 12,
+    gap: 10,
+  },
+  paginationText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  paginationActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paginationButton: {
+    flex: 1,
+    minHeight: 38,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paginationButtonDisabled: {
+    opacity: 0.5,
+  },
+  paginationButtonText: {
+    color: '#374151',
+    fontSize: 12,
     fontWeight: '800',
   },
   emptyState: {

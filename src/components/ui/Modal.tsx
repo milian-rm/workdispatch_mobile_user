@@ -32,28 +32,35 @@ export function Modal({
 }: ModalProps) {
   return (
     <RNModal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={styles.overlay}
-        onPress={() => closeOnBackdrop && onClose?.()}
-      >
-        <Pressable style={[styles.container, sizeStyles[size]]} onPress={(e) => e.stopPropagation()}>
+      <View style={styles.overlay}>
+        {closeOnBackdrop ? (
+          <Pressable style={styles.backdropPressable} onPress={() => onClose?.()} />
+        ) : null}
+
+        <View style={[styles.container, sizeStyles[size]]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.title} numberOfLines={2}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close-outline" size={20} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
           {/* Content */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+          >
             {children}
           </ScrollView>
 
           {/* Footer */}
           {footer && <View style={styles.footer}>{footer}</View>}
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </RNModal>
   );
 }
@@ -73,10 +80,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
+  backdropPressable: {
+    ...StyleSheet.absoluteFillObject,
+  },
   container: {
     backgroundColor: WD.white,
     borderRadius: 12,
-    maxHeight: '80%',
+    maxHeight: '90%',
     overflow: 'hidden',
   },
   header: {
@@ -89,17 +99,21 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   title: {
+    flex: 1,
     fontSize: 18,
     fontWeight: '700',
     color: '#111827',
+    paddingRight: 12,
   },
   closeButton: {
     padding: 4,
   },
   content: {
     paddingHorizontal: 20,
+    maxHeight: '78%',
+  },
+  contentContainer: {
     paddingVertical: 16,
-    maxHeight: 300,
   },
   footer: {
     flexDirection: 'row',
